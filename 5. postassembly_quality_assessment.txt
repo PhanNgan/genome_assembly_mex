@@ -1,0 +1,35 @@
+############################### I. CONTAMINANT SCREENING ########################################################
+
+# Map short reads on final genome assemnly
+		bwa index CANU_Mex1.fasta 
+		bwa mem -t 4 CANU_Mex1.fasta Mex1_Hiseq_cleaned_mitofree_1.fastq Mex1_Hiseq_cleaned_mitofree_2.fastq | samtools sort -@4 -O BAM > Hiseq_vs_Canu_Mex1.bam
+# Search NCBI nt with blast
+		blastn -task megablast -query CANU_Mex1.fasta  -db nt -culling_limit 2 -out CANU_Mex1_nt.tsv -outfmt '6 qseqid staxids bitscore std sscinames sskingdoms stitle' -num_threads 16 -evalue 1e-25 
+
+# Create blobtools graph
+		blobtools create -i CANU_Mex1.fasta -b Hiseq_vs_Canu_Mex1.bam -t CANU_Mex1.tsv -o CANU_Mex1 --db ./data/nodesDB.txt
+		blobtools view -i CANU_Mex1.blobDB.json
+		blobtools plot -i CANU_Mex1.blobDB.json
+
+# Take fasta sequences for cleaned contigs
+		perl -ne 'if(/^>(\S+)/){$c=$i{$1}}$c?print:chomp;$i{$_}=1 if @ARGV' list_283scf_cleaned CANU_Mex1.fasta > CANU_283scf.fasta
+
+
+
+############################### II. ASSEMBLY METRICS AND COMPLETENESS  ########################################################
+
+## Assembly metrics of all fasta files were obtained using QUAST (http://quast.sourceforge.net) 
+## The scaffolds obtained from innitial assembly, after polishing, after purging haplotig, and after cleaning process were assessed using BUSCO using the same command below:
+
+		python3 /usr/local/BUSCO-3.0.2/scripts/run_BUSCO.py -i CANU_Mex1.fasta -o BUSCO_results -l eukaryota_odb9 -m genome -c 1 --long -sp caenorhabditis
+
+## The CEGMA completess was calculated at https://gvolante.riken.jp/analysis.html using parameter below:
+		Cut-off length for sequence statistics and base composition: 1
+		Sequence type: Genome (nucleotide)
+		Choose an ortholog search pipeline: CEGMA
+		Ortholog set for CEGMA: CEG (for eukaryotes)
+		Gene prediction parameters for CEGMA: Non-vertebrate
+		Max intron length: 5000 nt, Gene flanks: 2000 nt 
+
+
+ 

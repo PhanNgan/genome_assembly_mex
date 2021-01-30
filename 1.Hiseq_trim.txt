@@ -1,0 +1,37 @@
+########### II. ILLUMINA READS: QUALITY CONTROL,TRIMMING, CLEANING AND MITOCHONDRIAL REMOVAL #######################
+# Check quality with fastqc
+		fastqc MEX-P0E1_CCGCGGTT-CTAGCGCT-AHGCLWBBXY_L001_R*.fastq.gz
+
+
+
+#Trimming quality with Skewer
+
+		skewer -n -x ATCGGAAGAGCACACGTCTGAACTCCAGTCACCCGCGGTTATCTCGTATG -q 30 -l 51 - t 16 -m pe -o Mex_hiseq_trimmed_overepresented-trimmed MEX-P0E1_CCGCGGTT-CTAGCGCT-AHGCLWBBXY_L001_R1.fastq.gz MEX-P0E1_CCGCGGTT-CTAGCGCT-AHGCLWBBXY_L001_R2.fastq.gz
+
+# error correction using musket
+           musket -omulti hiseq_corrected -inorder Mex_hiseq_trimmed_overepresented-trimmed_R1.fastq.gz Mex_hiseq_trimmed_overepresented-trimmed_R2.fastq.gz
+
+# Pre-assembly with SPADES (script 
+		spades.py --only-assembler --careful -k 21,33,55,77,99 -m 450 -t 8 -o . --pe1-1 Mex_hiseq_trimmed_overepresented-trimmed-pair1.fastq.gz --pe1-2 Mex_hiseq_trimmed_overepresented-trimmed-pair2.fastq.gz
+
+# Search NCBI nt with blast
+		blastn -task megablast -query  Mex_hise_scaffolds.fasta -db nt -culling_limit 2 -out Mex_blastn.tsv -outfmt '6 qseqid staxids bitscore std sscinames sskingdoms stitle' -num_threads 16 -evalue 1e-25 
+
+# Map Hiseq against pre-assembled contig with BWA
+		bwa index Mex_hise_scaffolds.fasta #index the fasta file
+		bwa mem -t 4 Mex_hise_scaffolds.fasta Mex_hiseq_trimmed_overepresented-trimmed-pair1.fastq.gz Mex_hiseq_trimmed_overepresented-trimmed-pair2.fastq.gz  | samtools sort -@4 -O BAM -o Mex_spades_sorted.bam #map hiseq to preassemble contig
+		samtools index Mex_spades_sorted.bam #index bam file
+
+
+# Screening by Blobtools
+		blobtools create -i Mex_hise_scaffolds.fasta -b Mex_spades_sorted.bam -t Mex_blastn.tsv --db ./data/nodesDB.txt -o MEX1_preassembled_blobtool #Create the BlobDB JSON file
+		blobtools view -i Mex_blobtool.blobDB.json #Generate a table
+		blobtools plot -i Mex_blobtool.blobDB.json #Create the plot
+
+
+
+# Removed of mitochondrial reads by mapping with reference mitogenome of Mex and get the unmapped reads
+
+		bowtie2-build Mitogenome_Mexigua_checked.fasta Mitogenome_Mexigua
+		bowtie2 -x Mitogenome_Mexigua -p 4 -L 20 -1 Mex_Hiseq_cleaned.1.fastq.gz -2 Mex_Hiseq_cleaned.2.fastq.gz –S Mitogenome_Mexigua_vs_hiseq.sam --un-conc ./ Mex_hiseq_trimed_cleaned_remove_mito.fastq##output are cleaned and mito-free paired-end reads Mex_hiseq_trimed_cleaned_remove_mito.1.fastq and Mex_hiseq_trimed_cleaned_remove_mito.2.fastq
+

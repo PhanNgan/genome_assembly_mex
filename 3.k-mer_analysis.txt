@@ -1,0 +1,11 @@
+############### III. K-MER ANALYSYS ##################
+#Count kmers using jellyfish:
+jellyfish count -C -m 21 -s 1000000000 -t 10 Mex_hiseq_trimed_cleaned_remove_mito.*.fastq -o Mex_reads.jf ##the same with k-mer value 17, 27, and 47
+
+#Export the kmer count histogram
+jellyfish histo -h 1000000 -t 10 Mex_reads.jf > Mex_reads.histo
+
+#Upload reads.histo to GenomeScope (http://qb.cshl.edu/genomescope/) 
+Kmer length 21 ##change if k-mer value 17, 27, and 47
+Read length 150
+Max kmer coverage 900000

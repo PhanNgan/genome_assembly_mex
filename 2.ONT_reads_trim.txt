@@ -1,0 +1,22 @@
+################# I. NANOPORE READS: TRIMMING AND MITOCHONDRIAL REMOVAL #################
+
+# Quality check with nanopack
+		NanoPlot  --fastq_rich 20191009_GenoMelo_SPLX_Mex1-1-1-2-M25-S00-L11_GXB01176_GA20000_FAL16194.fastq.gz -o fastq_norich --verbose --N50
+
+# Trim adapter with Porechop
+		porechop -i 20191009_GenoMelo_SPLX_Mex1-1-1-2-M25-S00-L11_GXB01176_GA20000_FAL16194.fastq.gz  -o Mex_nano_trimmed.fastq.gz #--threads 8
+
+# Quality trim with NanoFilt
+		NanoFilt -q 9 -l 500 Mex_nano_trimmed.fastq.gz | gzip > Mex_nano_q9_l500_trimmed.fastq.gz
+
+### Remove mitochondrial reads
+		minimap2 -ax map-ont Mitogenome_Mexigua_checked.fasta Mex_nano_q9_l500_trimmed.fastq.gz | samtools fastq -n -f 4 - > Mex_nano_trim_q9_l500_remove_mitogenome.fastq.gz
+
+
+
+
+
+
+
+
+
