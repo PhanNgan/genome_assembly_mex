@@ -31,7 +31,10 @@
 
 
 # Removed of mitochondrial reads by mapping with reference mitogenome of Mex and get the unmapped reads
+bwa index Mitogenome_Mexigua_checked.fasta 
+bwa mem -R "@RG\tID:mex1\tSM:mex1\tLB:mex1\tPL:Illumina" -t 4 Mitogenome_Mexigua_checked.fasta  Mex_Hiseq_cleaned.1.fastq.gz Mex_Hiseq_cleaned.2.fastq.gz | samtools sort -@4 -O BAM > Mitogenome_Mexigua_vs_hiseq.bam
+samtools view -H  Mitogenome_Mexigua_vs_hiseq.bam > Mitogenome_hd.sam
+samtools view Mitogenome_Mexigua_vs_hiseq.bam  | perl -lane 'next unless $F[5] =~ /^(\d+)M/;print if $1 < 100;' | cat Mitogenome_hd.sam - | samtools view -Sb - > mito_free.bam
+bamToFastq -i mito_free.bam -fq1 Mex_hiseq_trimed_cleaned_remove_mito-1.fastq -fq2 Mex_hiseq_trimed_cleaned_remove_mito_2.fastq
 
-		bowtie2-build Mitogenome_Mexigua_checked.fasta Mitogenome_Mexigua
-		bowtie2 -x Mitogenome_Mexigua -p 4 -L 20 -1 Mex_Hiseq_cleaned.1.fastq.gz -2 Mex_Hiseq_cleaned.2.fastq.gz –S Mitogenome_Mexigua_vs_hiseq.sam --un-conc ./ Mex_hiseq_trimed_cleaned_remove_mito.fastq##output are cleaned and mito-free paired-end reads Mex_hiseq_trimed_cleaned_remove_mito.1.fastq and Mex_hiseq_trimed_cleaned_remove_mito.2.fastq
 
